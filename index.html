@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Planejador de Armários Pro</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <meta name="theme-color" content="#ffffff" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: 'hsl(222.2 47.4% 11.2%)',
+                foreground: 'hsl(210 40% 98%)',
+              },
+              secondary: {
+                DEFAULT: 'hsl(210 40% 96.1%)',
+                foreground: 'hsl(222.2 8.9% 12.2%)',
+              },
+              destructive: {
+                DEFAULT: 'hsl(0 84.2% 60.2%)',
+                foreground: 'hsl(210 40% 98%)',
+              },
+              muted: {
+                DEFAULT: 'hsl(210 40% 96.1%)',
+                foreground: 'hsl(215 20.2% 65.1%)',
+              },
+              accent: {
+                DEFAULT: 'hsl(210 40% 96.1%)',
+                foreground: 'hsl(222.2 47.4% 11.2%)',
+              },
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      .print-container {
+        --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
+        box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+      }
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        .print-container, .print-container * {
+          visibility: visible;
+        }
+        .print-container {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          border: none !important;
+          box-shadow: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        .no-print {
+          display: none;
+        }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-secondary">
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(error => {
+              console.log('ServiceWorker registration failed: ', error);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>

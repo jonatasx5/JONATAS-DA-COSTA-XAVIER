@@ -1,0 +1,5 @@
+{
+  "name": "Planejador de Armários Pro",
+  "description": "Uma aplicação completa para cálculo, orçamento e geração de lista de produção para armários planejados, baseada em regras de negócio detalhadas.",
+  "requestFramePermissions": []
+}
