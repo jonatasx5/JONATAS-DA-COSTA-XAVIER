@@ -1,6 +1,7 @@
+
 import React, { useState, useRef } from 'react';
-import { BudgetInputs, BudgetCalculations, CabinetCalculations, CompanyProfile } from '../types';
-import { Card, Input, Button, PrinterIcon, CameraIcon, Textarea, Select } from '../components/ui';
+import { BudgetInputs, BudgetCalculations, CompanyProfile, LayoutType } from '../types';
+import { Card, Button, CameraIcon, Textarea, Select, Input } from '../components/ui';
 
 declare const html2canvas: any;
 
@@ -9,13 +10,13 @@ interface QuoteModalProps {
   onClose: () => void;
   budgetInputs: BudgetInputs;
   budgetCalculations: BudgetCalculations;
-  cabinetCalculations: CabinetCalculations;
   companyProfile: CompanyProfile;
+  budgetNumber: string;
 }
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-export const QuoteModal: React.FC<QuoteModalProps> = ({ isOpen, onClose, budgetInputs, budgetCalculations, cabinetCalculations, companyProfile }) => {
+export const QuoteModal: React.FC<QuoteModalProps> = ({ isOpen, onClose, budgetInputs, budgetCalculations, companyProfile, budgetNumber }) => {
   const [clientName, setClientName] = useState('');
   const [clientAddress, setClientAddress] = useState('');
   const [sellerName, setSellerName] = useState('');
@@ -26,12 +27,6 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({ isOpen, onClose, budgetI
 
   const handleSaveAsImage = () => {
     if (quoteRef.current) {
-        // Temporarily hide inputs before screenshot
-        const inputs = quoteRef.current.querySelectorAll('.no-print-input');
-        inputs.forEach(input => (input as HTMLElement).style.display = 'none');
-        const placeholders = quoteRef.current.querySelectorAll('.print-placeholder');
-        placeholders.forEach(ph => (ph as HTMLElement).style.display = 'block');
-        
         html2canvas(quoteRef.current, {
             scale: 2, // Higher scale for better quality
             useCORS: true,
@@ -41,9 +36,6 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({ isOpen, onClose, budgetI
             link.download = `orcamento-${clientName.replace(/\s/g, '_') || 'cliente'}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
-             // Restore visibility
-            inputs.forEach(input => (input as HTMLElement).style.display = 'block');
-            placeholders.forEach(ph => (ph as HTMLElement).style.display = 'none');
         });
     }
   };
@@ -61,18 +53,18 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({ isOpen, onClose, budgetI
 
   const getSelectedAccessories = () => {
       return (Object.entries(budgetInputs.acessorios) as [string, number][])
-        .filter(([, qty]) => qty > 0)
+        .filter(([key, qty]) => qty > 0 && key !== 'lateral') // Filtra 'lateral' para não aparecer na lista, mas o valor já está no total
         .map(([key, qty]) => {
             const labels: {[key:string]: string} = {
                 portaTempero: "Porta-tempero", gavetao: "Gavetão", gavetaDupla: "Gaveta Dupla",
-                escorredor: "Escorredor Embutido", portaPano: "Porta-pano", portaCanto: "Porta de Canto",
-                lateria: "Lateria (painel lateral)"
+                escorredor: "Escorredor Embutido", portaPano: "Porta-pano", portaCanto: "Porta de Canto"
             };
-            return `${qty}x ${labels[key]}`;
+            return `${qty}x ${labels[key] || key}`;
         });
   }
 
   const finalCabinetLocation = cabinetLocation === 'Outros' ? customCabinetLocation : cabinetLocation;
+  const tipoArmarioLabel = budgetInputs.type === 'inferior' ? 'Armário Inferior' : 'Armário Superior';
 
   return (
     <>
@@ -119,7 +111,8 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({ isOpen, onClose, budgetI
                   </div>
                   <div className="text-right flex-shrink-0">
                       <p className="text-2xl font-bold text-gray-400 uppercase">Orçamento</p>
-                      <p className="text-sm text-gray-600">{new Date().toLocaleDateString('pt-BR')}</p>
+                      <p className="text-sm text-gray-600">Nº {budgetNumber}</p>
+                      <p className="text-xs text-gray-500">{new Date().toLocaleDateString('pt-BR')}</p>
                   </div>
               </header>
 
@@ -141,8 +134,29 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({ isOpen, onClose, budgetI
                       <h3 className="text-base font-semibold text-primary mb-3">Detalhes do Produto</h3>
                       <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
                           <div>
+                              <p className="font-semibold text-gray-600">Tipo:</p>
+                              <p className="text-gray-800 pl-2">{tipoArmarioLabel}</p>
+                          </div>
+                          <div>
                               <p className="font-semibold text-gray-600">Dimensões Gerais:</p>
-                              <p className="text-gray-800 pl-2">&bull; Largura: {cabinetCalculations.comprimentoUtil.toFixed(2)} cm | Altura: {cabinetCalculations.alturaQuadro.toFixed(2)} cm</p>
+                              {budgetInputs.layout === LayoutType.Reto && (
+                                <p className="text-gray-800 pl-2">&bull; Largura: {budgetInputs.medidas.ladoA.toFixed(2)} cm | Altura: {budgetInputs.alturaCm.toFixed(2)} cm</p>
+                              )}
+                              {budgetInputs.layout === LayoutType.EmL && (
+                                <>
+                                  <p className="text-gray-800 pl-2">&bull; Lado A: {budgetInputs.medidas.ladoA.toFixed(2)} cm</p>
+                                  <p className="text-gray-800 pl-2">&bull; Lado B: {budgetInputs.medidas.ladoB.toFixed(2)} cm</p>
+                                  <p className="text-gray-800 pl-2">&bull; Altura: {budgetInputs.alturaCm.toFixed(2)} cm</p>
+                                </>
+                              )}
+                              {budgetInputs.layout === LayoutType.EmU && (
+                                <>
+                                  <p className="text-gray-800 pl-2">&bull; Lado A: {budgetInputs.medidas.ladoA.toFixed(2)} cm</p>
+                                  <p className="text-gray-800 pl-2">&bull; Lado B: {budgetInputs.medidas.ladoB.toFixed(2)} cm</p>
+                                  <p className="text-gray-800 pl-2">&bull; Lado C: {budgetInputs.medidas.ladoC.toFixed(2)} cm</p>
+                                  <p className="text-gray-800 pl-2">&bull; Altura: {budgetInputs.alturaCm.toFixed(2)} cm</p>
+                                </>
+                              )}
                           </div>
                           <div>
                               <p className="font-semibold text-gray-600">Acabamentos:</p>
@@ -162,7 +176,10 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({ isOpen, onClose, budgetI
                       <div className="flex justify-between items-center text-gray-600"><span>Valor base do móvel</span><span className="font-mono">{formatCurrency(budgetCalculations.basePrice)}</span></div>
                       <div className="flex justify-between items-center text-gray-600"><span>Acessórios</span><span className="font-mono">{formatCurrency(budgetCalculations.acessoriosPrice)}</span></div>
                       <div className="flex justify-between items-center font-semibold text-gray-800 pt-2 border-t"><span>Subtotal</span><span className="font-mono">{formatCurrency(budgetCalculations.subtotal)}</span></div>
-                      <div className="flex justify-between items-center text-gray-600 text-xs"><span>Ajustes de acabamento (x{budgetCalculations.multiplicadorAcabamento.toFixed(2)})</span><span className="font-mono">{formatCurrency(budgetCalculations.total - budgetCalculations.subtotal)}</span></div>
+                      <div className="flex justify-between items-center text-gray-600 text-xs"><span>Ajustes de acabamento (x{budgetCalculations.multiplicadorAcabamento.toFixed(2)})</span><span className="font-mono">{formatCurrency(budgetCalculations.total - budgetCalculations.subtotal - budgetCalculations.frete)}</span></div>
+                      {budgetCalculations.frete > 0 && (
+                        <div className="flex justify-between items-center text-gray-600 font-medium"><span>Frete / Deslocamento</span><span className="font-mono">{formatCurrency(budgetCalculations.frete)}</span></div>
+                      )}
                   </div>
                   <div className="mt-2 p-4 bg-primary text-primary-foreground rounded-lg flex justify-between items-center">
                       <span className="text-lg font-bold">Valor Total</span>
@@ -170,7 +187,30 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({ isOpen, onClose, budgetI
                   </div>
               </section>
               
-              <footer className="text-center text-xs text-gray-400 pt-6 mt-6 border-t">
+              <section className="mt-6">
+                  <h3 className="text-base font-semibold text-primary mb-3">Condições de Pagamento</h3>
+                  <div className="space-y-2 text-sm">
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+                          <p className="font-semibold text-green-800">À Vista com 5% de Desconto</p>
+                          <p className="text-xl font-bold text-green-700">{formatCurrency(budgetCalculations.total * 0.95)}</p>
+                      </div>
+                      {(() => {
+                          const total = budgetCalculations.total;
+                          if (total < 700) return null;
+                          const numParcelas = Math.floor(total / 700);
+                          if (numParcelas < 1) return null;
+                          const valorParcela = total / numParcelas;
+                          return (
+                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                                  <p className="font-semibold text-blue-800">Parcelado no Cartão</p>
+                                  <p className="text-base text-blue-700"><span className="font-bold">{numParcelas}x</span> de <span className="font-bold">{formatCurrency(valorParcela)}</span></p>
+                              </div>
+                          )
+                      })()}
+                  </div>
+              </section>
+
+              <footer className="text-center text-xs text-gray-400 pt-6 mt-auto border-t">
                   <p>Este orçamento é válido por 30 dias. Os valores podem sofrer alterações após este período.</p>
               </footer>
             </div>
